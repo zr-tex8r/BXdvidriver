@@ -20,6 +20,10 @@ templates that can be compiled in both PDF-mode and DVI-mode.
 
   - `*.sty` → $TEXMF/tex/latex/BXdvidriver
 
+### License
+
+This package is distributed under the MIT License.
+
 The bxdvidriver Package
 -----------------------
 
