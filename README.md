@@ -94,9 +94,11 @@ are done by package options.
 Revision History
 ----------------
 
+  * Version 0.2a ‹2017/02/13›
+      - Bug fix.
   * Version 0.2  ‹2016/03/26›
       - The first public version.
 
 --------------------
 Takayuki YATO (aka. "ZR")  
-http://zrbabbler.sp.land.to/
+https://github.com/zr-tex8r
