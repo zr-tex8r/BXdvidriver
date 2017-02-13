@@ -2,7 +2,7 @@
 
 %% package declaration
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{bxdvidriver}[2016/03/26 v0.2]
+\ProvidesPackage{bxdvidriver}[2017/02/13 v0.2a]
 
 %% preparation
 \def\bxdd@pkgname{bxdvidriver}
@@ -29,9 +29,9 @@
 %% variables
 \newif\ifbxdd@ok
 \@onlypreamble\bxdd@driver
-\let\bxdd@driver\relax
+\let\bxdd@driver\relax  % driver given to this package
 \@onlypreamble\bxdd@pdf@driver
-\let\bxdd@pdf@driver\relax
+\let\bxdd@pdf@driver\relax  % actual pdf-mode driver, or \relax
 
 %% \[bxdd@T/<driver>]
 \@for\bxdd@x:=\bxdd@dvi@driver@list\do{%
@@ -45,6 +45,12 @@
 \def\bxdd@detokenize@a#1>#2\relax#3{%
   \def#3{#2}}
 
+%% switch 'bxdd@in@preamble'
+\newif\ifbxdd@in@preamble
+\ifx\documentclass\@twoclasseserror
+  \bxdd@in@preambletrue
+\fi
+
 %--------------------------------------- options
 
 %% 'check'/'nocheck'
@@ -53,26 +59,35 @@
   \bxdd@checktrue}
 \DeclareOption{nocheck}{%
   \bxdd@checkfalse}
-%% drivers
+%% driver options
 \DeclareOption*{%
-  \expandafter\let\expandafter\bxdd@tmpa
-      \csname bxdd@T/\CurrentOption\endcsname
-  \ifx\bxdd@tmpa\relax
-    \PackageError\bxdd@pkgname
-     {Unknown driver name '\CurrentOption' found}%
-     {The invalid option is ignored.\MessageBreak\@ehc}
-  \else\ifx\bxdd@driver\relax
-    \let\bxdd@driver\CurrentOption
-  \else\ifx\bxdd@driver\CurrentOption
-    \PackageInfo\bxdd@pkgname
-     {Redundant driver option '\CurrentOption',\MessageBreak
-      found}%
+  \bxdd@pfxplus\CurrentOption \ifx\bxdd@tmpa\@empty
+    \let\bxdd@tmpa\CurrentOption
   \else
+    \expandafter\let\csname bxdd@T/\bxdd@tmpa\endcsname=d%
+  \fi
+  \expandafter\let\expandafter\bxdd@tmpb
+      \csname bxdd@T/\bxdd@tmpa\endcsname
+  \ifx\bxdd@tmpb\relax % unknown name
+    \PackageError\bxdd@pkgname
+     {Unknown driver name '\bxdd@tmpa' found}%
+     {The invalid option is ignored.\MessageBreak\@ehc}
+  \else\ifx\bxdd@driver\relax % first
+    \let\bxdd@driver\bxdd@tmpa
+  \else\ifx\bxdd@driver\bxdd@tmpa % repeated
+    \PackageInfo\bxdd@pkgname
+     {Redundant driver option '\bxdd@tmpa',\MessageBreak
+      found}%
+  \else % second
     \PackageError\bxdd@pkgname
      {Multiple driver options are given\MessageBreak
-      ('\bxdd@driver' and '\CurrentOption')}%
-      {The extra option '\CurrentOption' is ignored.\MessageBreak\@ehc}
+      ('\bxdd@driver' and '\bxdd@tmpa')}%
+      {The extra option '\bxdd@tmpa' is ignored.\MessageBreak\@ehc}
   \fi\fi\fi}
+\def\bxdd@pfxplus#1{%
+  \expandafter\bxdd@pfxplus@a#1\@gobble+\@nil}
+\def\bxdd@pfxplus@a#1+#2\@nil{%
+  \edef\bxdd@tmpa{\ifx\@nil#1\@nil#2\else\fi}}
 %%
 \ProcessOptions*
 
@@ -89,7 +104,7 @@
 
 %--------------------------------------- pdf-mode detection
 
-%% check 'pdfmode'
+%% check 'pdfmode' and set \bxdd@pdf@driver
 \bxdd@oktrue
 \ifluatex
   \let\bxdd@tmpa\m@ne
@@ -113,6 +128,7 @@
 \ifbxdd@ok\else
 \expandafter\endinput\fi\relax
 
+% clear \bxdd@driver if pdf-mode
 \ifx\bxdd@pdf@driver\relax\else
   \PackageInfo\bxdd@pkgname
    {Driver option '\bxdd@driver' is ignored, because\MessageBreak
@@ -120,7 +136,7 @@
   \let\bxdd@driver\relax
 \fi
 
-%--------------------------------------- 
+%--------------------------------------- append to global
 
 %% variables
 \let\bxdd@gopt\relax
@@ -134,6 +150,10 @@
   \@for\bxdd@gopt:=\@classoptionslist\do{%
     \let\bxdd@tmpa\bxdd@gopt \bxdd@detokenize\bxdd@tmpa
     \expandafter\ifx\csname bxdd@T/\bxdd@tmpa\endcsname\relax\else
+      \ifbxdd@in@preamble
+        \@expandtwoargs\@removeelement\bxdd@gopt
+            \@unusedoptionlist\@unusedoptionlist
+      \fi
       \ifx\bxdd@godrv\bxdd@gopt % just redundant
       \else\ifx\bxdd@godrv\relax % first
         \let\bxdd@godrv\bxdd@gopt
@@ -148,6 +168,7 @@
         \let\bxdd@godrv\bxdd@godrv@multiple
       \fi\fi\fi
     \fi}
+  \global\let\@unusedoptionlist\@unusedoptionlist
   \aftergroup\bxdd@okfalse
   \ifx\bxdd@godrv\relax
     \ifx\bxdd@driver\relax\else
@@ -167,6 +188,8 @@
         (see log for detail)}%
        {\@ehd}%
     \fi
+  \else\ifx\bxdd@driver\relax
+    % nothing to do
   \else % inconsistent
     \ifbxdd@check
       \PackageError\bxdd@pkgname
@@ -179,11 +202,11 @@
         because the global option list contains another driver\MessageBreak
         '\bxdd@godrv',}
     \fi
-  \fi\fi\fi
+  \fi\fi\fi\fi
   \endgroup}
 
 %% append the specified driver option
-\ifx\documentclass\@twoclasseserror% in preamble
+\ifbxdd@in@preamble
   \bxdd@scan@global@options
   \ifbxdd@ok
     \edef\bxdd@tmpa{%
@@ -211,7 +234,7 @@
     \bxdd@tmpa}
 \fi
 
-%---------------------------------------
+%--------------------------------------- check for graphics drivers
 
 %% \bxdd@scan@graphics@drivers
 \@onlypreamble\bxdd@scan@graphics@drivers
