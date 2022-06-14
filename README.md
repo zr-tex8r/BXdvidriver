@@ -24,6 +24,7 @@ templates that can be compiled in both PDF-mode and DVI-mode.
 
 This package is distributed under the MIT License.
 
+
 The bxdvidriver Package
 -----------------------
 
@@ -91,9 +92,12 @@ can be changed by options.
 This package offers no user commands or environments. All the settings
 are done by package options.
 
+
 Revision History
 ----------------
 
+  * Version 0.2b ‹2022/06/15›
+      - Adjust for HiTeX.
   * Version 0.2a ‹2017/02/13›
       - Bug fix.
   * Version 0.2  ‹2016/03/26›
