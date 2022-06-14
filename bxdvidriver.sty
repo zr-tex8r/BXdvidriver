@@ -1,10 +1,16 @@
-% bxdvidriver.sty
+%%
+%% This is file 'bxdvidriver.sty'.
+%%
+%% Copyright (c) 2016-2022 Takayuki YATO (aka. "ZR")
+%%   GitHub:   https://github.com/zr-tex8r
+%%   Twitter:  @zr_tex8r
+%%
+%% This package is distributed under the MIT License.
+%%
 
 %% package declaration
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{bxdvidriver}[2017/02/13 v0.2a]
-
-%% preparation
 \def\bxdd@pkgname{bxdvidriver}
 \providecommand\bxDebug[1]{}
 
@@ -17,7 +23,7 @@
   dvips,xdvi,dvipdf,dvipdfm,dvipdfmx,dvipsone,%
   dviwindo,oztex,textures,pctexps,pctex32}
 %% \bxdd@pdf@driver@list
-% List of pdf-driver names.
+% List of "PDF-mode" driver names.
 \@onlypreamble\bxdd@pdf@driver@list
 \def\bxdd@pdf@driver@list{%
   pdftex,xetex,luatex,vtex}
@@ -28,9 +34,7 @@
 
 %% variables
 \newif\ifbxdd@ok
-\@onlypreamble\bxdd@driver
 \let\bxdd@driver\relax  % driver given to this package
-\@onlypreamble\bxdd@pdf@driver
 \let\bxdd@pdf@driver\relax  % actual pdf-mode driver, or \relax
 
 %% \[bxdd@T/<driver>]
@@ -46,6 +50,7 @@
   \def#3{#2}}
 
 %% switch 'bxdd@in@preamble'
+% Here "in preamble" means "after \documentclass".
 \newif\ifbxdd@in@preamble
 \ifx\documentclass\@twoclasseserror
   \bxdd@in@preambletrue
@@ -76,8 +81,7 @@
     \let\bxdd@driver\bxdd@tmpa
   \else\ifx\bxdd@driver\bxdd@tmpa % repeated
     \PackageInfo\bxdd@pkgname
-     {Redundant driver option '\bxdd@tmpa',\MessageBreak
-      found}%
+     {Redundant driver option '\bxdd@tmpa'\@gobble}%
   \else % second
     \PackageError\bxdd@pkgname
      {Multiple driver options are given\MessageBreak
@@ -87,37 +91,35 @@
 \def\bxdd@pfxplus#1{%
   \expandafter\bxdd@pfxplus@a#1\@gobble+\@nil}
 \def\bxdd@pfxplus@a#1+#2\@nil{%
-  \edef\bxdd@tmpa{\ifx\@nil#1\@nil#2\else\fi}}
-%%
+  \edef\bxdd@tmpa{\ifx\@nil#1\@nil#2\fi}}
+%% dispatch
 \ProcessOptions*
 
 %% check consistency
 \ifx\bxdd@driver\relax
   \PackageInfo\bxdd@pkgname
-   {No driver option given,}
+   {No driver option given\@gobble}
 \else\expandafter\ifx\csname bxdd@T/\bxdd@driver\endcsname p%
   \PackageWarning\bxdd@pkgname
-   {The driver '\bxdd@driver' is a pdf-mode driver and\MessageBreak
+   {The driver '\bxdd@driver' is a PDF-mode driver and\MessageBreak
     inappropriate for this package,}
 \else\bxDebug{driver=\bxdd@driver}
 \fi\fi
 
-%--------------------------------------- pdf-mode detection
+%--------------------------------------- PDF mode detection
 
-%% check 'pdfmode' and set \bxdd@pdf@driver
-\bxdd@oktrue
+%% Check if some kind of "PDF mode" is effective
+% and set \bxdd@pdf@driver accordingly.
 \ifluatex
-  \let\bxdd@tmpa\m@ne
-  \pdf@isprimitive\outputmode\outputmode{\let\bxdd@tmpa\outputmode}{}
-  \pdf@isprimitive\pdfoutput\pdfoutput{\let\bxdd@tmpa\pdfoutput}{}
+  \chardef\bxdd@tmpa=0
+  \ifpdf \chardef\bxdd@tmpa=1
+  \else % for old ifpdf
+    \pdf@isprimitive\outputmode\outputmode{%
+      \chardef\bxdd@tmpa\outputmode}{}
+  \fi
   \ifnum\bxdd@tmpa>\z@
     \def\bxdd@pdf@driver{luatex}%
-  \else\ifnum\bxdd@tmpa<\z@
-    \PackageError\bxdd@pkgname
-     {INTERNAL ERROR (1)}
-     {Package loading is aborted.\MessageBreak\@ehc}
-    \bxdd@okfalse
-  \fi\fi
+  \fi
 \else\ifxetex
   \def\bxdd@pdf@driver{xetex}
 \else\ifvtex
@@ -125,14 +127,12 @@
 \else\ifpdf
   \def\bxdd@pdf@driver{pdftex}
 \fi\fi\fi\fi
-\ifbxdd@ok\else
-\expandafter\endinput\fi\relax
 
-% clear \bxdd@driver if pdf-mode
+% clear \bxdd@driver if PDF mode
 \ifx\bxdd@pdf@driver\relax\else
   \PackageInfo\bxdd@pkgname
    {Driver option '\bxdd@driver' is ignored, because\MessageBreak
-    the engine is in pdf-mode,}
+    the engine is in (kind of) PDF mode\@gobble}
   \let\bxdd@driver\relax
 \fi
 
@@ -144,6 +144,8 @@
 \let\bxdd@godrv@multiple=M% flag value
 
 %% \bxdd@scan@global@options
+% Check whether or not the given driver option should be appended
+% to the global option list, and set bxdd@ok accordingly.
 \@onlypreamble\bxdd@scan@global@options
 \def\bxdd@scan@global@options{%
   \begingroup
@@ -160,11 +162,11 @@
       \else\ifx\bxdd@godrv\bxdd@godrv@multiple % more
         \PackageInfo\bxdd@pkgname
          {Extra driver option in global option list\MessageBreak
-          ('\bxdd@gopt'),}%
+          ('\bxdd@gopt')\@gobble}%
       \else % second
         \PackageInfo\bxdd@pkgname
          {Multiple driver options in global option list\MessageBreak
-          ('\bxdd@godrv' and '\bxdd@gopt'),}%
+          ('\bxdd@godrv' and '\bxdd@gopt')\@gobble}%
         \let\bxdd@godrv\bxdd@godrv@multiple
       \fi\fi\fi
     \fi}
@@ -174,13 +176,13 @@
     \ifx\bxdd@driver\relax\else
       \PackageInfo\bxdd@pkgname
        {Driver option '\bxdd@driver' is appended to the\MessageBreak
-        global option list,}
+        global option list\@gobble}
       \aftergroup\bxdd@oktrue
     \fi
   \else\ifx\bxdd@godrv\bxdd@driver
     \PackageInfo\bxdd@pkgname
      {Driver option '\bxdd@driver' is already contained\MessageBreak
-      in the global option list,}
+      in the global option list\@gobble}
   \else\ifx\bxdd@godrv\bxdd@godrv@multiple
     \ifbxdd@check
       \PackageError\bxdd@pkgname
@@ -199,8 +201,8 @@
     \else
       \PackageInfo\bxdd@pkgname
        {Driver option '\bxdd@driver' is discarded,\MessageBreak
-        because the global option list contains another driver\MessageBreak
-        '\bxdd@godrv',}
+        because the global option list has another driver\MessageBreak
+        option '\bxdd@godrv'\@gobble}
     \fi
   \fi\fi\fi\fi
   \endgroup}
@@ -248,17 +250,17 @@
       \else\ifx\bxdd@godrv\bxdd@godrv@multiple % more
         \PackageInfo\bxdd@pkgname
          {Extra graphics driver is loaded\MessageBreak
-          ('\bxdd@gopt'),}%
+          ('\bxdd@gopt')\@gobble}%
       \else % second
         \PackageInfo\bxdd@pkgname
          {Multiple graphics driver is loaded\MessageBreak
-          ('\bxdd@godrv' and '\bxdd@gopt'),}%
+          ('\bxdd@godrv' and '\bxdd@gopt')\@gobble}%
         \let\bxdd@godrv\bxdd@godrv@multiple
       \fi\fi
     \fi}
   \ifx\bxdd@godrv\relax
     \PackageInfo\bxdd@pkgname
-     {No graphics driver used,}
+     {No graphics driver used\@gobble}
   \else\ifx\bxdd@godrv\bxdd@godrv@multiple
     \ifbxdd@check
       \PackageError\bxdd@pkgname
@@ -268,7 +270,7 @@
     \fi
   \else
     \PackageInfo\bxdd@pkgname
-     {Graphics driver is '\bxdd@godrv',}
+     {Graphics driver is '\bxdd@godrv'\@gobble}
   \fi\fi
   \endgroup}
 
