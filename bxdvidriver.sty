@@ -26,6 +26,7 @@
 % List of "PDF-mode" driver names.
 \@onlypreamble\bxdd@pdf@driver@list
 \def\bxdd@pdf@driver@list{%
+  HINT,% tentative name
   pdftex,xetex,luatex,vtex}
 
 %% packages
@@ -127,6 +128,8 @@
 \else\ifpdf
   \def\bxdd@pdf@driver{pdftex}
 \fi\fi\fi\fi
+\pdf@isprimitive\HINTversion\HINTversion{%
+  \def\bxdd@pdf@driver{HINT}}{}
 
 % clear \bxdd@driver if PDF mode
 \ifx\bxdd@pdf@driver\relax\else
